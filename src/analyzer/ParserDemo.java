@@ -86,7 +86,7 @@ class ParserDemo {
    */
   public static void demoAPI(LexicalizedParser lp) {
     // This option shows parsing a list of correctly tokenized words
-    String[] sent = { "This", "is", "an", "easy", "sentence", "." };
+    String[] sent = { "This", "is", "an", "easy", "sentence.", "." };
     List<CoreLabel> rawWords = Sentence.toCoreLabelList(sent);
     Tree parse = lp.apply(rawWords);
     parse.pennPrint();
