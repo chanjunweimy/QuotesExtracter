@@ -130,6 +130,10 @@ public class TextAnalyzer {
 		
 		return authorQuote;
 	}
+	
+	private int toInt(String str) {
+		return Integer.parseInt(str);
+	}
 
 	/**
 	 * @param text
@@ -156,16 +160,19 @@ public class TextAnalyzer {
 		GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
 		List<TypedDependency> tdl = gs.typedDependenciesCCprocessed();
 		
-		/*
+		Vector <String> tokens = new Vector <String>(rawWords2.size());
+		
 		for (int i = 0; i < rawWords2.size(); i++) {
-			System.out.println(rawWords2.get(i));
-		}*/	
+			String token = rawWords2.get(i).toString();
+			token = token.split("-")[0].trim();
+			tokens.add(token);
+		}	
 		
 		//find name
 		for (int i = 0; i < tdl.size(); i++) {
 			TypedDependency td = tdl.get(i);
 			String tds = td.toString();
-			System.out.println(tds);
+			//System.out.println(tds);
 
 			if (tds.startsWith("nsubj")) {
 				tds = tds.replaceFirst("nsubj", "");
@@ -178,6 +185,44 @@ public class TextAnalyzer {
 
 				if (isReportingVerbs(nsubjs[0])) {
 					String author = nsubjs[1];
+					int min = tdl.size() + 2;
+					int max = -1;
+					for (int j = 0; j < tdl.size(); j++) {
+						TypedDependency td2 = tdl.get(j);
+						String tds2 = td2.toString();
+						if (tds2.startsWith("compound")) {
+							tds2 = tds2.replaceFirst("compound", "");
+							tds2 = tds2.replace("(", "");
+							tds2 = tds2.replace(")", "");
+							tds2 = tds2.replace(" ", "");
+							String[] compounds = tds2.split(",");
+							String[] authorTokens = compounds[0].split("-");
+							if (author == authorTokens[0]) {
+								int first = toInt(authorTokens[1]);
+								int second = toInt(compounds[1].split("-")[1]);
+								
+								min = Math.min(first, min);
+								min = Math.min(second, min);
+								max = Math.max(first, max);
+								max = Math.max(second, max);
+							}
+									
+						}
+					}
+					
+					StringBuffer sb = new StringBuffer();
+					for (int j = min; j <= max; j++) {
+						sb.append(tokens.get(j - 1));
+					}
+					author = sb.toString();
+					
+					//appos to find the xing rong ci
+					
+					//aux to eliminate has/have
+					
+					//mark to eliminate that/to
+					
+					
 					//String reportingVerb = nsubjs[0];
 					
 					String quote = text;
