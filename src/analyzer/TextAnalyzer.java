@@ -25,6 +25,7 @@ public class TextAnalyzer {
 	private class AuthorQuote {
 		private String _author = null;
 		private String _quote = null;
+		private String _description = null;
 
 		protected String getAuthor() {
 			assert (_author != null);
@@ -35,6 +36,11 @@ public class TextAnalyzer {
 			assert (_quote != null);
 			return _quote;
 		}
+		
+		protected String getDescription() {
+			assert (_description != null);
+			return _description;
+		}
 
 		protected void setAuthor(String author) {
 			_author = author;
@@ -43,6 +49,10 @@ public class TextAnalyzer {
 		protected void setQuote(String quote) {
 			_quote = quote;
 		}
+		
+		protected void setDescription(String description) {
+			_description = description;
+		}
 	}
 	
 	public TextAnalyzer() {
@@ -50,6 +60,8 @@ public class TextAnalyzer {
 	}
 	
 	private Vector <String> _reportingVerbsDictionary = null;
+	//final private String[] PUNCTUATIONS = {",", "\"", "\'"};
+	final private String[] MARKS = {"that"};
 	
 	private void loadFromFile() {
 		BufferedReader br = null;
@@ -174,30 +186,43 @@ public class TextAnalyzer {
 			String tds = td.toString();
 			//System.out.println(tds);
 
+
 			if (tds.startsWith("nsubj")) {
 				tds = tds.replaceFirst("nsubj", "");
 				tds = tds.replace("(", "");
 				tds = tds.replace(")", "");
 				tds = tds.replace(" ", "");
 				String[] nsubjs = tds.split(",");
-				nsubjs[0] = nsubjs[0].split("-")[0];
-				nsubjs[1] = nsubjs[1].split("-")[0];
+				String[] reportingVerbArray = nsubjs[0].split("-");
+				//String[] authorArray = nsubjs[1].split("-");
 
-				if (isReportingVerbs(nsubjs[0])) {
+				if (isReportingVerbs(reportingVerbArray[0])) {
 					String author = nsubjs[1];
 					int min = tdl.size() + 2;
 					int max = -1;
+					
+					int authorMin = tdl.size() + 2;
+					int authorMax = -1;
+					String appos = "";
+					//compound to find the full name
+					//aux to eliminate has/have
+					//mark to eliminate that/to
+					//appos to find the xing rong ci
+					
 					for (int j = 0; j < tdl.size(); j++) {
 						TypedDependency td2 = tdl.get(j);
 						String tds2 = td2.toString();
+						
 						if (tds2.startsWith("compound")) {
+							
 							tds2 = tds2.replaceFirst("compound", "");
 							tds2 = tds2.replace("(", "");
 							tds2 = tds2.replace(")", "");
 							tds2 = tds2.replace(" ", "");
 							String[] compounds = tds2.split(",");
-							String[] authorTokens = compounds[0].split("-");
-							if (author == authorTokens[0]) {
+							
+							if (author.equals(compounds[0])) {
+								String[] authorTokens = compounds[0].split("-");
 								int first = toInt(authorTokens[1]);
 								int second = toInt(compounds[1].split("-")[1]);
 								
@@ -205,35 +230,109 @@ public class TextAnalyzer {
 								min = Math.min(second, min);
 								max = Math.max(first, max);
 								max = Math.max(second, max);
+								
+								authorMin = Math.min(first, authorMin);
+								authorMin = Math.min(second, authorMin);
+								authorMax = Math.max(first, authorMax);
+								authorMax = Math.max(second, authorMax);
 							}
 									
+						}  else if (tds2.startsWith("mark")) {
+							tds2 = tds2.replaceFirst("mark", "");
+							tds2 = tds2.replace("(", "");
+							tds2 = tds2.replace(")", "");
+							tds2 = tds2.replace(" ", "");
+							String[] marks = tds2.split(",");
+							marks = marks[1].split("-");
+							
+							for (int k = 0; k < MARKS.length; k++) {
+								if (MARKS[k].equals(marks[0].toLowerCase())) {
+									int mark = toInt(marks[1]);
+									
+									min = Math.min(mark, min);
+									max = Math.max(mark, max);
+								}
+							}
+						} else if (tds2.startsWith("appos")) {
+							tds2 = tds2.replaceFirst("appos", "");
+							tds2 = tds2.replace("(", "");
+							tds2 = tds2.replace(")", "");
+							tds2 = tds2.replace(" ", "");
+							String[] apposes = tds2.split(",");
+							
+							if (apposes[0].equals(nsubjs[1])) {
+								String tempAppos = apposes[1];
+								StringBuffer apposBuffer = new StringBuffer();
+								int tempApposPos = toInt(apposes[1].split("-")[1]);
+								int apposMin = tempApposPos;
+								int apposMax = tempApposPos;
+								for (int k = 0; k < tdl.size(); k++) {
+									String tds3 = tdl.get(k).toString();
+									if (tds3.startsWith("compound")) {
+										tds3 = tds3.replaceFirst("compound", "");
+										tds3 = tds3.replace("(", "");
+										tds3 = tds3.replace(")", "");
+										tds3 = tds3.replace(" ", "");
+										String[] compounds = tds3.split(",");
+										
+										if (compounds[0].equals(tempAppos)) {
+											compounds = compounds[1].split("-");
+											int pos = toInt(compounds[1]);
+											apposMin = Math.min(pos, apposMin);
+											apposMax = Math.max(pos, apposMax);
+										}
+									}
+								}
+								
+								for (int k = apposMin; k <= apposMax; k++) {
+									apposBuffer.append(tokens.get(k - 1) + " ");
+								}
+								
+								min = Math.min(apposMin, min);
+								max = Math.max(apposMax, max);
+								
+								appos = apposBuffer.toString().trim();
+							}
 						}
 					}
 					
-					StringBuffer sb = new StringBuffer();
-					for (int j = min; j <= max; j++) {
-						sb.append(tokens.get(j - 1));
+					int reportingVerbsPosition = toInt(reportingVerbArray[1]);
+					min = Math.min(min, reportingVerbsPosition);
+					max = Math.max(max, reportingVerbsPosition);
+					
+					StringBuffer authorBuffer = new StringBuffer();
+					for (int j = authorMin; j <= authorMax; j++) {
+						authorBuffer.append(tokens.get(j - 1) + " ");
 					}
-					author = sb.toString();
+					author = authorBuffer.toString().trim();
 					
-					//appos to find the xing rong ci
 					
-					//aux to eliminate has/have
-					
-					//mark to eliminate that/to
+
 					
 					
 					//String reportingVerb = nsubjs[0];
 					
-					String quote = text;
+					//String quote = text;
 					//String quote = text.replace(author, "");
 					//quote = quote.replace(reportingVerb, "");
 					//quote = quote.replace("  ", " ");
+					StringBuffer quoteBuffer = new StringBuffer();
+					min--;
+					max--;
+					for (int j = 0; j < tokens.size(); j++) {
+						if (j >= min && j <= max) {
+							continue;
+						}
+						quoteBuffer.append(tokens.get(j) + " ");
+					}
+					String quote = quoteBuffer.toString().trim();
 					
 					authorQuote = new AuthorQuote();
 					
 					authorQuote.setAuthor(author);
 					authorQuote.setQuote(quote);
+					authorQuote.setDescription(appos);
+					break;
 				}
 			}
 		}
@@ -253,7 +352,8 @@ public class TextAnalyzer {
 			}
 			AuthorQuote quote = analyzer.getQuotes(line);
 			if (quote != null) {
-				String reply = "author: " + quote.getAuthor() + "\n" + "quote: " + quote.getQuote() + "\n";
+				String reply = "author: " + quote.getAuthor() + "\n" + "quote: " + quote.getQuote() + "\n"
+						 	 + "description: " + quote.getDescription() + "\n";
 				System.out.println(reply);
 			}
 			// System.out.println(quote);
