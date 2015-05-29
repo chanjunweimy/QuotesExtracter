@@ -11,3 +11,4 @@ bin/
 *.txt
 
 lib/
+release/

@@ -1,17 +1,26 @@
 package analyzer;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Reader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Vector;
 
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.HasWord;
+import edu.stanford.nlp.ling.Sentence;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
+import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.process.Tokenizer;
 import edu.stanford.nlp.process.TokenizerFactory;
@@ -339,25 +348,87 @@ public class TextAnalyzer {
 	    
 		return authorQuote;
 	}
+	
+	private List<String> extractSentencesFromText(String text) {
+		Reader reader = new StringReader(text);
+		DocumentPreprocessor dp = new DocumentPreprocessor(reader);
+		List<String> sentenceList = new ArrayList<String>();
+
+		for (List<HasWord> sentence : dp) {
+		   String sentenceString = Sentence.listToString(sentence);
+		   sentenceList.add(sentenceString.toString());
+		}
+
+		return sentenceList;
+	}
 
 	public static void main(String[] args) {
-		Scanner sc = new Scanner(System.in);
+		String input = "a.in";
+		String output = "a.out";
+		
+		if (args.length == 2) {
+			input = args[0];
+			output = args[1];
+		} else if (args.length == 1) {
+			input = args[0];
+		}
+		PrintStream out = null;
+		try {
+			out = new PrintStream(new FileOutputStream(output));
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return;
+		}
+		
+		System.setOut(out);
+		
+		File file = new File(input);
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		byte[] data = new byte[(int) file.length()];
+		try {
+			fis.read(data);
+			fis.close();
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+
+		String text = null;
+		try {
+			text = new String(data, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
 		
 		TextAnalyzer analyzer = new TextAnalyzer();
-		while (sc.hasNextLine()) {
-			String line = sc.nextLine();
+		List<String> sentences = analyzer.extractSentencesFromText(text);
+		for (String line : sentences) {
+			System.err.println(line);
 			line = line.trim();
 			if (line.isEmpty()) {
 				continue;
 			}
 			AuthorQuote quote = analyzer.getQuotes(line);
 			if (quote != null) {
-				String reply = "author: " + quote.getAuthor() + "\n" + "quote: " + quote.getQuote() + "\n"
+				String reply = "sentence: " + line + "\n"
+							 + "author: " + quote.getAuthor() + "\n" + "quote: " + quote.getQuote() + "\n"
 						 	 + "description: " + quote.getDescription() + "\n";
 				System.out.println(reply);
+				//System.err.println(reply);
 			}
 			// System.out.println(quote);
 		}
-		sc.close();
 	}
 }
