@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Vector;
@@ -85,7 +86,7 @@ public class TextAnalyzer {
 		} else {
 			authorQuote = extractQuoteWithoutColon(text);
 		}
-		
+				
 		return authorQuote;
 		/*
 		 * Pattern p = Pattern.compile( "\"([^\"]*)\"" ); Matcher m =
@@ -94,7 +95,7 @@ public class TextAnalyzer {
 		 * quote.toString().trim();
 		 */
 	}
-	
+
 	private AuthorQuote extractQuoteWithColon(String text) {
 		AuthorQuote authorQuote = null;
 		String[] partitions = text.split(":");
@@ -128,7 +129,29 @@ public class TextAnalyzer {
 	private AuthorQuote extractQuoteWithoutColon(String text) {
 		AuthorQuote authorQuote = null;
 		
-		String parserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
+		String parserModel = null;
+		
+		if (isCJK(text)) {
+			parserModel = "edu/stanford/nlp/models/lexparser/chinesePCFG.ser.gz";
+			HashSet <String> chineseStrings = new HashSet<String> ();
+			for (int i = 0; i < text.length(); i++) {
+				char ch = text.charAt(i);
+	            Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
+	            if (Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS.equals(block)|| 
+	                Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS.equals(block)|| 
+	                Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A.equals(block)){
+	            	String chineseString = text.substring(i, i + 1);
+	            	chineseStrings.add(chineseString);
+	                //return true;
+	            }
+			}
+			
+			for (String str : chineseStrings) {
+			    text = text.replaceAll(str, str + " ");
+			}
+		} else {
+			parserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
+		}
 
 		LexicalizedParser lp;
 		lp = LexicalizedParser.loadModel(parserModel);
@@ -158,7 +181,7 @@ public class TextAnalyzer {
 		for (int i = 0; i < tdl.size(); i++) {
 			TypedDependency td = tdl.get(i);
 			String tds = td.toString();
-			//System.out.println(tds);
+			System.out.println(tds);
 
 
 			if (tds.startsWith("nsubj")) {
@@ -400,11 +423,6 @@ public class TextAnalyzer {
 		String line = null;
 		while ((line = sc.nextLine()) != null) {
 			System.err.println(line);
-			
-			if (analyzer.isCJK(line)) {
-				System.out.println(line + " is chinese");
-				continue;
-			}
 			
 			line = line.trim();
 			if (line.isEmpty()) {
