@@ -1,18 +1,14 @@
 package analyzer;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Vector;
 
 import edu.stanford.nlp.ling.CoreLabel;
@@ -31,38 +27,7 @@ import edu.stanford.nlp.trees.TreebankLanguagePack;
 import edu.stanford.nlp.trees.TypedDependency;
 
 public class TextAnalyzer {
-	private class AuthorQuote {
-		private String _author = null;
-		private String _quote = null;
-		private String _description = null;
-
-		protected String getAuthor() {
-			assert (_author != null);
-			return _author;
-		}
-
-		protected String getQuote() {
-			assert (_quote != null);
-			return _quote;
-		}
-		
-		protected String getDescription() {
-			assert (_description != null);
-			return _description;
-		}
-
-		protected void setAuthor(String author) {
-			_author = author;
-		}
-
-		protected void setQuote(String quote) {
-			_quote = quote;
-		}
-		
-		protected void setDescription(String description) {
-			_description = description;
-		}
-	}
+	
 	
 	public TextAnalyzer() {
 		loadFromFile();
@@ -112,7 +77,7 @@ public class TextAnalyzer {
 		return false;
 	}
 
-	private AuthorQuote getQuotes(String text) {
+	public AuthorQuote getQuotes(String text) {
 		AuthorQuote authorQuote = null;
 		
 		if (text.split(":").length == 2) {
@@ -349,7 +314,7 @@ public class TextAnalyzer {
 		return authorQuote;
 	}
 	
-	private List<String> extractSentencesFromText(String text) {
+	public List<String> extractSentencesFromText(String text) {
 		Reader reader = new StringReader(text);
 		DocumentPreprocessor dp = new DocumentPreprocessor(reader);
 		List<String> sentenceList = new ArrayList<String>();
@@ -361,8 +326,23 @@ public class TextAnalyzer {
 
 		return sentenceList;
 	}
+	
+	public boolean isCJK(String str){
+        int length = str.length();
+        for (int i = 0; i < length; i++){
+            char ch = str.charAt(i);
+            Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
+            if (Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS.equals(block)|| 
+                Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS.equals(block)|| 
+                Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A.equals(block)){
+                return true;
+            }
+        }
+        return false;
+    }
 
 	public static void main(String[] args) {
+		/*
 		String input = "a.in";
 		String output = "a.out";
 		
@@ -411,11 +391,21 @@ public class TextAnalyzer {
 			e.printStackTrace();
 			return;
 		}
+		*/
+		
+		Scanner sc = new Scanner(System.in);
 		
 		TextAnalyzer analyzer = new TextAnalyzer();
-		List<String> sentences = analyzer.extractSentencesFromText(text);
-		for (String line : sentences) {
+		//List<String> sentences = analyzer.extractSentencesFromText(text);
+		String line = null;
+		while ((line = sc.nextLine()) != null) {
 			System.err.println(line);
+			
+			if (analyzer.isCJK(line)) {
+				System.out.println(line + " is chinese");
+				continue;
+			}
+			
 			line = line.trim();
 			if (line.isEmpty()) {
 				continue;
@@ -430,5 +420,6 @@ public class TextAnalyzer {
 			}
 			// System.out.println(quote);
 		}
+		sc.close();
 	}
 }
