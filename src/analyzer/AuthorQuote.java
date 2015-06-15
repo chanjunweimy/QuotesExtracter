@@ -16,7 +16,10 @@ public class AuthorQuote {
 	}
 	
 	public String getDescription() {
-		assert (_description != null);
+		if (_description == null) {
+			_description = "";
+		}
+
 		return _description;
 	}
 

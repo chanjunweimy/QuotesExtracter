@@ -45,6 +45,7 @@ public class TextAnalyzer {
 
 	
 	private void loadFromFile() {
+		System.out.println("loading...");
 		BufferedReader br = null;
 		int defaultMaxDictSize = 1000;
 		_reportingVerbsDictionary = new Vector <String> (defaultMaxDictSize);
@@ -86,6 +87,8 @@ public class TextAnalyzer {
 
 	    _segmenter = new CRFClassifier<CoreLabel>(props);
 	    _segmenter.loadClassifierNoExceptions(basedir + "/ctb.gz", props);
+	    
+	    System.out.println("done loading.");
 	}
 	
 	private boolean isReportingVerbs(String token) {
@@ -158,6 +161,7 @@ public class TextAnalyzer {
 			authorQuote.setAuthor(partitions[0]);
 			authorQuote.setQuote(partitions[1]);
 		}
+
 		
 		return authorQuote;
 	}
@@ -190,27 +194,6 @@ public class TextAnalyzer {
 	private AuthorQuote parseChineseTexts(String text, AuthorQuote authorQuote) {
 		String parserModel;
 		parserModel = "edu/stanford/nlp/models/lexparser/chineseFactored.ser.gz";
-		/*
-		 * 		HashSet <String> chineseStrings = new HashSet<String> ();
-
-		for (int i = 0; i < text.length(); i++) {
-			char ch = text.charAt(i);
-		    Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
-		    if (Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS.equals(block)|| 
-		        Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS.equals(block)|| 
-		        Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A.equals(block)){
-		    	String chineseString = text.substring(i, i + 1);
-		    	chineseStrings.add(chineseString);
-		        //return true;
-		    }
-		}
-		
-		for (String str : chineseStrings) {
-		    text = text.replaceAll(str, str + " ");
-		}
-		*/
-		
-		
 
 	    List<String> segmented = _segmenter.segmentString(text);
 
@@ -219,6 +202,7 @@ public class TextAnalyzer {
 	    	sb.append(token);
 	    	sb.append(" ");
 	    }
+	    String originalText = new String(text);
 	    text = sb.toString().trim();
 	    System.err.println("tokenized text is: " + text);
 		
@@ -250,8 +234,7 @@ public class TextAnalyzer {
 		for (int i = 0; i < tdl.size(); i++) {
 			TypedDependency td = tdl.get(i);
 			String tds = td.toString();
-			System.out.println(tds);
-
+			//System.out.println(tds);
 
 			if (tds.startsWith("nsubj")) {
 				tds = tds.replaceFirst("nsubj", "");
@@ -264,24 +247,18 @@ public class TextAnalyzer {
 
 				if (isReportingVerbs(reportingVerbArray[0])) {
 					String author = nsubjs[1];
-					int min = tdl.size() + 2;
-					int max = -1;
 					
 					int authorMin = tdl.size() + 2;
 					int authorMax = -1;
-					String appos = "";
-					//compound to find the full name
-					//aux to eliminate has/have
-					//mark to eliminate that/to
-					//appos to find the xing rong ci
+					//nn to find full name
 					
 					for (int j = 0; j < tdl.size(); j++) {
 						TypedDependency td2 = tdl.get(j);
 						String tds2 = td2.toString();
 						
-						if (tds2.startsWith("compound")) {
+						if (tds2.startsWith("nn")) {
 							
-							tds2 = tds2.replaceFirst("compound", "");
+							tds2 = tds2.replaceFirst("nn", "");
 							tds2 = tds2.replace("(", "");
 							tds2 = tds2.replace(")", "");
 							tds2 = tds2.replace(" ", "");
@@ -292,113 +269,24 @@ public class TextAnalyzer {
 								int first = toInt(authorTokens[1]);
 								int second = toInt(compounds[1].split("-")[1]);
 								
-								min = Math.min(first, min);
-								min = Math.min(second, min);
-								max = Math.max(first, max);
-								max = Math.max(second, max);
 								
 								authorMin = Math.min(first, authorMin);
 								authorMin = Math.min(second, authorMin);
 								authorMax = Math.max(first, authorMax);
 								authorMax = Math.max(second, authorMax);
 							}
-									
-						}  else if (tds2.startsWith("mark")) {
-							tds2 = tds2.replaceFirst("mark", "");
-							tds2 = tds2.replace("(", "");
-							tds2 = tds2.replace(")", "");
-							tds2 = tds2.replace(" ", "");
-							String[] marks = tds2.split(",");
-							marks = marks[1].split("-");
-							
-							for (int k = 0; k < MARKS.length; k++) {
-								if (MARKS[k].equals(marks[0].toLowerCase())) {
-									int mark = toInt(marks[1]);
-									
-									min = Math.min(mark, min);
-									max = Math.max(mark, max);
-								}
-							}
-						} else if (tds2.startsWith("appos")) {
-							tds2 = tds2.replaceFirst("appos", "");
-							tds2 = tds2.replace("(", "");
-							tds2 = tds2.replace(")", "");
-							tds2 = tds2.replace(" ", "");
-							String[] apposes = tds2.split(",");
-							
-							if (apposes[0].equals(nsubjs[1])) {
-								String tempAppos = apposes[1];
-								StringBuffer apposBuffer = new StringBuffer();
-								int tempApposPos = toInt(apposes[1].split("-")[1]);
-								int apposMin = tempApposPos;
-								int apposMax = tempApposPos;
-								for (int k = 0; k < tdl.size(); k++) {
-									String tds3 = tdl.get(k).toString();
-									if (tds3.startsWith("compound")) {
-										tds3 = tds3.replaceFirst("compound", "");
-										tds3 = tds3.replace("(", "");
-										tds3 = tds3.replace(")", "");
-										tds3 = tds3.replace(" ", "");
-										String[] compounds = tds3.split(",");
-										
-										if (compounds[0].equals(tempAppos)) {
-											compounds = compounds[1].split("-");
-											int pos = toInt(compounds[1]);
-											apposMin = Math.min(pos, apposMin);
-											apposMax = Math.max(pos, apposMax);
-										}
-									}
-								}
-								
-								for (int k = apposMin; k <= apposMax; k++) {
-									apposBuffer.append(tokens.get(k - 1) + " ");
-								}
-								
-								min = Math.min(apposMin, min);
-								max = Math.max(apposMax, max);
-								
-								appos = apposBuffer.toString().trim();
-							}
 						}
 					}
-					
-					int reportingVerbsPosition = toInt(reportingVerbArray[1]);
-					min = Math.min(min, reportingVerbsPosition);
-					max = Math.max(max, reportingVerbsPosition);
-					
 					StringBuffer authorBuffer = new StringBuffer();
 					for (int j = authorMin; j <= authorMax; j++) {
-						authorBuffer.append(tokens.get(j - 1) + " ");
+						authorBuffer.append(tokens.get(j - 1));
 					}
-					author = authorBuffer.toString().trim();
-					
-					
-
-					
-					
-					//String reportingVerb = nsubjs[0];
-					
-					//String quote = text;
-					//String quote = text.replace(author, "");
-					//quote = quote.replace(reportingVerb, "");
-					//quote = quote.replace("  ", " ");
-					StringBuffer quoteBuffer = new StringBuffer();
-					min--;
-					max--;
-					for (int j = 0; j < tokens.size(); j++) {
-						if (j >= min && j <= max) {
-							continue;
-						}
-						quoteBuffer.append(tokens.get(j) + " ");
-					}
-					String quote = quoteBuffer.toString().trim();
+					author = authorBuffer.toString();
+					String quote = originalText.replace(author, "");
 					
 					authorQuote = new AuthorQuote();
-					
 					authorQuote.setAuthor(author);
 					authorQuote.setQuote(quote);
-					authorQuote.setDescription(appos);
-					break;
 				}
 			}
 		}
@@ -455,11 +343,13 @@ public class TextAnalyzer {
 
 				if (isReportingVerbs(reportingVerbArray[0])) {
 					String author = nsubjs[1];
-					int min = tdl.size() + 2;
-					int max = -1;
+
+					int authorTokenPosition = toInt(nsubjs[1].split("-")[1]);
+					int authorMin = authorTokenPosition;
+					int authorMax = authorTokenPosition;
 					
-					int authorMin = tdl.size() + 2;
-					int authorMax = -1;
+					int min = authorTokenPosition;
+					int max = -1;
 					String appos = "";
 					//compound to find the full name
 					//aux to eliminate has/have
