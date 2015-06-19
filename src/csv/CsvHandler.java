@@ -116,8 +116,8 @@ public class CsvHandler {
     public static void main(String[] args) {
     	CsvHandler handler = new CsvHandler();
     	String record = "1,1,1,1,1,1,1,1";
-    	String filename = "any.csv";
+    	String outputFile = "output.csv";
     	String[] columns = record.split(",");
-    	handler.writeFile(filename, columns);
+    	handler.writeFile(outputFile, columns);
     }
 }
