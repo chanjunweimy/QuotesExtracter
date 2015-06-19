@@ -1,5 +1,5 @@
 /**
- * package for handling database
+ * package for handling databaseon d
  */
 /**
  * @author Jun

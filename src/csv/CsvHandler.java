@@ -1,15 +1,61 @@
 package csv;
 
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import analyzer.AuthorQuote;
 import analyzer.TextAnalyzer;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 
-public class CsvReader {
+public class CsvHandler {
 	private static final char CSV_DELIMITER = ',';
+	
+	public boolean writeFile(String filename, String[] columnDatas) {
+		File f = new File(filename);
+		if (!f.exists()) {
+			System.err.println("initiating file " + filename);
+			initCsvFile(filename);
+		}
+		return writeDataToCsv(filename, columnDatas);
+	}
+
+	/**
+	 * @param filename
+	 */
+	private void initCsvFile(String filename) {
+		String columnRecord = "Source,Date,Url,Title,IsTitleHasStatement,Author,Quote,Description";
+		String[] columnNames = columnRecord.split(",");
+		writeDataToCsv(filename, columnNames);
+	}
+
+	/**
+	 * @param filename
+	 * @param columnDatas
+	 * @return
+	 */
+	private boolean writeDataToCsv(String filename, String[] columnDatas) {
+		try {
+			boolean isAppend = true;
+			FileWriter fileWriter = new FileWriter(filename, isAppend);
+			CSVWriter writer = new CSVWriter(fileWriter);
+			
+			//Write the record to file
+			writer.writeNext(columnDatas);
+			    
+			//close the writer
+			writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			return false;
+		}
+
+		
+		return true;
+	}
 	
 	public void readFile(String filename) {
         CSVReader reader = null;
@@ -68,7 +114,10 @@ public class CsvReader {
 	
 	
     public static void main(String[] args) {
-    	CsvReader reader = new CsvReader();
-    	reader.readFile("result.csv");
+    	CsvHandler handler = new CsvHandler();
+    	String record = "1,1,1,1,1,1,1,1";
+    	String filename = "any.csv";
+    	String[] columns = record.split(",");
+    	handler.writeFile(filename, columns);
     }
 }
