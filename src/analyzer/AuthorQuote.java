@@ -4,6 +4,7 @@ public class AuthorQuote {
 	private String _author = null;
 	private String _quote = null;
 	private String _description = null;
+	private String _rule = null;
 
 	public String getAuthor() {
 		assert (_author != null);
@@ -22,6 +23,13 @@ public class AuthorQuote {
 
 		return _description;
 	}
+	
+	public String getRule() {
+		if (_rule == null) {
+			_rule = "";
+		}
+		return _rule;
+	}
 
 	public void setAuthor(String author) {
 		_author = author;
@@ -33,5 +41,9 @@ public class AuthorQuote {
 	
 	public void setDescription(String description) {
 		_description = description;
+	}
+
+	public void setRule(String rule) {
+		_rule = rule;
 	}
 }

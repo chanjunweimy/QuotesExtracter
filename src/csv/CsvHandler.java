@@ -27,7 +27,7 @@ public class CsvHandler {
 	 * @param filename
 	 */
 	private void initCsvFile(String filename) {
-		String columnRecord = "Source,Date,Url,Title,IsTitleHasStatement,Author,Quote,Description";
+		String columnRecord = "Id,Source,Date,Url,Title,IsTitleHasStatement,Author,Quote,Description,Rule";
 		String[] columnNames = columnRecord.split(",");
 		writeDataToCsv(filename, columnNames);
 	}
@@ -78,27 +78,64 @@ public class CsvHandler {
             		continue;
             	}
             	
-                for(int i = 0; i < nextLine.length; i++) {
+                String id = "";
+                String source = "";
+                String date = "";
+                String url = "";
+                String rule = "";
+                for (int i = 0; i < nextLine.length; i++) {
                     String token = nextLine[i];
                     String columnName = columnNames[i].trim();
-                    if (columnName.equalsIgnoreCase("source") ||
-                    	columnName.equalsIgnoreCase("date") ||
-                    	columnName.equalsIgnoreCase("url")) {
-                    	System.out.println(columnName + " : " + token); 
-                    } else if (columnName.equalsIgnoreCase("title")) {
-                    	System.out.println(columnName + " : " + token); 
-                    	AuthorQuote quote = analyzer.getQuotes(token);
-                    	String reply = "Title does not have statement.\n";
-            			if (quote != null) {
-            				reply = "Title has statement.\nauthor: " + quote.getAuthor() + "\n" + "quote: " + quote.getQuote() + "\n"
-            						+ "description: " + quote.getDescription() + "\n";
-            				//System.err.println(reply);
-            			}
-        				System.out.println(reply);
+                    if (columnName.equalsIgnoreCase("source")) {
+                    	source = token;
+                    } else if (columnName.equalsIgnoreCase("date")) {
+                    	date = token;
+                    } else if (columnName.equalsIgnoreCase("url")) {
+                    	url = token;
+                    } else if (columnName.equalsIgnoreCase("id")) {
+                    	id = token;
                     }
                 }
-                System.out.println("\n");
+                
+                for (int i = 0; i < nextLine.length; i++) {
+                	String token = nextLine[i];
+                    String columnName = columnNames[i].trim();
+                	if (columnName.equalsIgnoreCase("title")) {
+                    	String title = token;
+                    	AuthorQuote authorQuote = analyzer.getQuotes(token);
+                    	String statement = "no";
+                    	String author = "";
+                    	String quote = "";
+                    	String description = "";
+            			if (authorQuote != null) {
+            				statement = "yes";         
+            				author = authorQuote.getAuthor();
+            				quote = authorQuote.getQuote();
+            				description = authorQuote.getDescription();
+            				rule = authorQuote.getRule();
+            			}
+            			//System.err.println(reply);
+        				String delimeter = ",,,,,,,,";
+        				String record = id + delimeter + 
+        								source + delimeter +
+        								date + delimeter +
+        								url + delimeter +
+        								title + delimeter + 
+        								statement + delimeter +
+        								author + delimeter +
+        								quote + delimeter + 
+        								description + delimeter +
+        								rule;
+        					
+        		    	String outputFile = "output.csv";
+        		    	String[] columns = record.split(delimeter);
+        		    	writeFile(outputFile, columns);
+                    }
+                }
             }
+            
+            System.out.println("\n");
+
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -110,14 +147,12 @@ public class CsvHandler {
                 e.printStackTrace();
             }
         }
+        System.out.println("Done Parsing.");
 	}
 	
 	
     public static void main(String[] args) {
     	CsvHandler handler = new CsvHandler();
-    	String record = "1,1,1,1,1,1,1,1";
-    	String outputFile = "output.csv";
-    	String[] columns = record.split(",");
-    	handler.writeFile(outputFile, columns);
+    	handler.readFile("result.csv");
     }
 }

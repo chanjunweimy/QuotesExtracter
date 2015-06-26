@@ -42,6 +42,10 @@ public class TextAnalyzer {
 	final private String[] MARKS = {"that"};
 	private static final String basedir = System.getProperty("TextAnalyzer", "data");
 	private CRFClassifier<CoreLabel> _segmenter;
+	
+	final private String RULE_COLON = "Rule 1 : The Colon \":\" Rule";
+	final private String RULE_ENGLISH = "Rule 2 : Stanford Parser (English)";
+	final private String RULE_CHINESE = "Rule 3 : Stanford Parser (Chinese)";
 
 	
 	private void loadFromFile() {
@@ -132,6 +136,7 @@ public class TextAnalyzer {
 		}
 		
 		authorQuote = new AuthorQuote();
+		authorQuote.setRule(RULE_COLON);
 		if (partitionFirst.length > partitionSecond.length) {
 			authorQuote.setAuthor(partitions[1]);
 			authorQuote.setQuote(partitions[0]);
@@ -154,6 +159,7 @@ public class TextAnalyzer {
 		}
 		
 		authorQuote = new AuthorQuote();
+		authorQuote.setRule(RULE_COLON);
 		if (partitionFirst.length > partitionSecond.length) {
 			authorQuote.setAuthor(partitions[1]);
 			authorQuote.setQuote(partitions[0]);
@@ -287,6 +293,7 @@ public class TextAnalyzer {
 					authorQuote = new AuthorQuote();
 					authorQuote.setAuthor(author);
 					authorQuote.setQuote(quote);
+					authorQuote.setRule(RULE_CHINESE);
 				}
 			}
 		}
@@ -479,6 +486,7 @@ public class TextAnalyzer {
 					authorQuote.setAuthor(author);
 					authorQuote.setQuote(quote);
 					authorQuote.setDescription(appos);
+					authorQuote.setRule(RULE_ENGLISH);
 					break;
 				}
 			}
